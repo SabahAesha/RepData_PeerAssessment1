@@ -1,25 +1,120 @@
 ---
-title: "Reproducible Research: Peer Assessment 1"
-output: 
+title: "PA1_template.Rmd"
+author: "Aesha"
+date: "11/12/2020"
+output:
   html_document:
-    keep_md: true
+    df_print: paged
 ---
+##Loading and preprocessing the data
+```{r}
+data <-read.csv("activity.csv")
+names(data)
+data2 <-read.csv("activity.csv")
+```
+##1. What is mean total number of steps taken per day?
+
+1.Calculate the total number of steps taken per day
+```{r}
+total_steps <- aggregate(steps~date, data, FUN=sum, na.rm=TRUE)
+```
+
+2.Make a histogram of the total number of steps taken each day
+```{r}
+hist(total_steps$steps, 
+     main= "Total number of steps taken each day", 
+     xlab="Total number of steps", 
+     col= "red")
+```
+3. Calculate and report the mean and median of the total number of steps taken per day
+```{r}
+mean_steps <- mean(total_steps$steps) 
+print(mean_steps)
+median_steps <- median(total_steps$steps)
+print(median_steps)
+```
+
+##What is the average daily activity pattern?
+creating a dataframe with the mean of each 5-minute interval 
+and use the funtion plot() to make the time series plot
+```{r}
+five_minutes_average <- aggregate(steps~interval, data, FUN=mean, na.rm=TRUE)
+plot(x = five_minutes_average$interval, y = five_minutes_average$steps, type = "l") 
+```
+
+## there are a number of days/intervals where there are missing values (coded as \color{red}{\verb|NA|}NA). The presence of missing days may introduce bias into some calculations or summaries of the data.
+Calculate and report the total number of missing values in the dataset (i.e. the total number of rows with\color{red}{\verb|NA|}NAs)
+```{r}
+NA_count <- sum(is.na(data$steps))
+print (NA_count)
+```
+##Devise a strategy for filling in all of the missing values in the dataset. 
+Find the NA positions
+```{r}
+na_pos <- which(is.na(data$steps))
+```
+Create a vector of means
+```{r}
+mean_vec <- rep(mean(data$steps, na.rm=TRUE), times=length(na_pos))
+```
+##Create a new dataset that is equal to the original dataset but with the missing data filled in.
+Replace the NAs by the means
+```{r}
+data[na_pos, "steps"] <- mean_vec
+head(data)
+```
+##Make a histogram of the total number of steps taken each day and 
+##Calculate and report the mean and median total number of steps taken per day. 
+##Do these values differ from the estimates from the first part of the assignment? 
+##What is the impact of imputing missing data on the estimates of the total daily number of steps?
+
+Compute the total number of steps each day (NA values removed)
+```{r}
+sum_data <- aggregate(data$steps, by=list(data$date), FUN=sum)
+```
+Rename the attributes
+```{r}
+names(sum_data) <- c("date", "total")
+```
+Compute the histogram of the total number of steps each day
+```{r}
+hist(sum_data$total, 
+     breaks=seq(from=0, to=25000, by=2500),
+     col="red", 
+     xlab="Total number of steps", 
+     ylim=c(0, 40), 
+     main="Histogram of the total number of steps taken each day\n(NA replaced by mean value)")
+```
+##Create a new factor variable in the dataset with two levels – “weekday” and “weekend” 
+indicating whether a given date is a weekday or weekend day.
+```{r}
+DayType <- function(date) {
+  day <- weekdays(date)
+  if (day %in% c('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'))
+    return ("weekeday")
+  else if (day %in% c('Saturday', 'Sunday'))
+    return ("weekend")
+  else
+    stop ("Invalid Date Format.")
+}
+data$date <- as.Date(data$date)
+data$day <- sapply(data$date, FUN = DayType)
+```
+
+##Make a panel plot containing a time series plot (i.e.\color{red}{\verb|type="l"|} type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis). 
+```{r}
+library (ggplot2)
+meanStepsByDay <- aggregate(steps ~ interval + day, data, mean)
+ggplot(data = meanStepsByDay, aes(x = interval, y = steps)) + 
+  geom_line() +
+  facet_grid(day ~ .) +
+  ggtitle("Average Daily Activity Pattern") +
+  xlab("5-minutes Interval") +
+  ylab("Average Number of Steps") +
+  theme(plot.title = element_text(hjust = 0.6))
+```
 
 
-## Loading and preprocessing the data
 
 
 
-## What is mean total number of steps taken per day?
-
-
-
-## What is the average daily activity pattern?
-
-
-
-## Imputing missing values
-
-
-
-## Are there differences in activity patterns between weekdays and weekends?
